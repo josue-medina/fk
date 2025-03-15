@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Datos del Alumno</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(to right, #4facfe, #00f2fe);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            padding: 10px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            width: 100%;
+            max-width: 350px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h2 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        p {
+            font-size: 18px;
+            font-weight: bold;
+            color: #444;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 2px solid #4facfe;
+            border-radius: 6px;
+            font-size: 16px;
+            text-align: center;
+            outline: none;
+        }
+
+        .button-container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            gap: 8px;
+        }
+
+        button {
+            color: white;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn-azul { background: #4facfe; }
+        .btn-azul:hover { background: #0084ff; }
+        .btn-verde { background: #28a745; }
+        .btn-verde:hover { background: #218838; }
+        .btn-rojo { background: #dc3545; }
+        .btn-rojo:hover { background: #c82333; }
+
+        #qrContainer {
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+        }
+
+        @media (max-width: 400px) {
+            .card {
+                width: 90%;
+                padding: 15px;
+            }
+        }
+    </style>
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAXBkobMfB0mZJtD1hLUT0iqzcf0QTMRNE",
+            authDomain: "registros-8f30a.firebaseapp.com",
+            projectId: "registros-8f30a",
+            storageBucket: "registros-8f30a.firebasestorage.app",
+            messagingSenderId: "982877431394",
+            appId: "1:982877431394:web:2d04f074cb6bbf6745133b"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let alumnoId;
+        let puntosActuales = 0;
+
+        document.addEventListener("DOMContentLoaded", async function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            alumnoId = urlParams.get("id");
+
+            if (!alumnoId) {
+                document.getElementById("info").innerHTML = "<p>No se encontró el alumno.</p>";
+                return;
+            }
+
+            await cargarDatos();
+            generarQR();
+        });
+
+        async function cargarDatos() {
+            const docRef = doc(db, "usuarios", alumnoId);
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                puntosActuales = data.puntos || 0;
+
+                document.getElementById("info").innerHTML = `
+                    <h2>${data.nombre} ${data.apellido}</h2>
+                    <p id="puntos">Puntos: ${puntosActuales}</p>
+                    <input type="number" id="cantidadPuntos" placeholder="Ingrese puntos">
+                    <div class="button-container">
+                        <button class="btn-azul" onclick="actualizarPuntos()">Actualizar Puntos</button>
+                        <button class="btn-verde" onclick="modificarPuntos(500)">+500</button>
+                        <button class="btn-rojo" onclick="modificarPuntos(-500)">-500</button>
+                    </div>
+                `;
+            } else {
+                document.getElementById("info").innerHTML = "<p>Alumno no encontrado.</p>";
+            }
+        }
+
+        async function actualizarPuntos() {
+            const cantidad = parseInt(document.getElementById("cantidadPuntos").value);
+            if (isNaN(cantidad)) {
+                alert("Por favor, ingrese una cantidad válida.");
+                return;
+            }
+            modificarPuntos(cantidad);
+            document.getElementById("cantidadPuntos").value = "";
+        }
+
+        async function modificarPuntos(valor) {
+            let nuevoPuntaje = puntosActuales + valor;
+            if (nuevoPuntaje < 0) nuevoPuntaje = 0;
+
+            const docRef = doc(db, "usuarios", alumnoId);
+            await updateDoc(docRef, { puntos: nuevoPuntaje });
+
+            puntosActuales = nuevoPuntaje;
+            document.getElementById("puntos").textContent = `Puntos: ${puntosActuales}`;
+        }
+
+        function generarQR() {
+            const qrContainer = document.getElementById("qrContainer");
+            qrContainer.innerHTML = "";
+
+            new QRCode(qrContainer, {
+                text: `https://josue-medina.github.io/fk/ver.html?id=${alumnoId}`,
+                width: 128,
+                height: 128
+            });
+        }
+
+        window.actualizarPuntos = actualizarPuntos;
+        window.modificarPuntos = modificarPuntos;
+    </script>
+</head>
+<body>
+    <div class="card">
+        <div id="info">Cargando... </div>
+        <div id="qrContainer"></div>
+    </div>
+</body>
+</html>

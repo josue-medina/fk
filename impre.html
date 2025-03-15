@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Gafetes</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        /* Fondo degradado */
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to right, #ff9a9e, #fad0c4, #fad0c4, #fbc2eb);
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* Botón de imprimir */
+        #imprimirGafetes {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        #imprimirGafetes:hover {
+            background: #0056b3;
+        }
+
+        /* Contenedor de gafetes */
+        #gafetesContainer {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        /* Estilo del gafete */
+        .gafete {
+            width: 5cm;
+            height: 7cm;
+            background: white;
+            border: 2px solid #333;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 10px;
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Nombre del alumno */
+        .info h2 {
+            font-size: 18px;
+            margin: 10px 0;
+            color: #333;
+        }
+
+        /* Estilo del código QR */
+        .qr {
+            margin-top: 10px;
+        }
+
+        /* Estilos para impresión */
+        @media print {
+            body {
+                background: white;
+            }
+            #imprimirGafetes {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Gafetes de Alumnos</h1>
+    <button id="imprimirGafetes">Imprimir Gafetes</button>
+    <div id="gafetesContainer"></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAXBkobMfB0mZJtD1hLUT0iqzcf0QTMRNE",
+            authDomain: "registros-8f30a.firebaseapp.com",
+            projectId: "registros-8f30a",
+            storageBucket: "registros-8f30a.appspot.com",
+            messagingSenderId: "982877431394",
+            appId: "1:982877431394:web:2d04f074cb6bbf6745133b"
+        };
+
+        class GafeteGenerator {
+            constructor(config) {
+                this.app = initializeApp(config);
+                this.db = getFirestore(this.app);
+                this.container = document.getElementById("gafetesContainer");
+                this.imprimirBtn = document.getElementById("imprimirGafetes");
+                this.imprimirBtn.addEventListener("click", () => this.imprimir());
+                this.generarGafetes();
+            }
+
+            async obtenerDatos() {
+                try {
+                    const querySnapshot = await getDocs(collection(this.db, "usuarios"));
+                    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                } catch (error) {
+                    console.error("Error obteniendo datos:", error);
+                    return [];
+                }
+            }
+
+            async generarGafetes() {
+                const usuarios = await this.obtenerDatos();
+                this.container.innerHTML = "";
+                if (usuarios.length === 0) {
+                    this.container.innerHTML = "<p>No hay usuarios registrados.</p>";
+                    return;
+                }
+                usuarios.forEach(usuario => this.crearGafete(usuario));
+            }
+
+            crearGafete({ nombre, apellido, id }) {
+                const gafete = document.createElement("div");
+                gafete.classList.add("gafete");
+
+                const info = document.createElement("div");
+                info.classList.add("info");
+                info.innerHTML = `<h2>${nombre} ${apellido}</h2>`;
+
+                const qrDiv = document.createElement("div");
+                qrDiv.classList.add("qr");
+                new QRCode(qrDiv, {
+                    text: `https://josue-medina.github.io/fk/ver.html?id=${id}`,
+                    width: 100,
+                    height: 100
+                });
+
+                gafete.appendChild(info);
+                gafete.appendChild(qrDiv);
+                this.container.appendChild(gafete);
+            }
+
+            imprimir() {
+                window.print();
+            }
+        }
+
+        new GafeteGenerator(firebaseConfig);
+    </script>
+</body>
+</html>
