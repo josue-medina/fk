@@ -18,6 +18,10 @@
             appId: "1:982877431394:web:2d04f074cb6bbf6745133b"
         };
 
+        document.getElementById("irAImprimir").addEventListener("click", function() {
+        window.location.href = "https://josue-medina.github.io/fk/impre.html";
+        });
+
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
@@ -78,6 +82,7 @@
                 });
             });
         });
+
     </script>
 
     <style>
@@ -171,6 +176,7 @@
         <p id="mensaje"></p>
         <button id="verRegistros">Ver Registros</button>
         <table id="tablaRegistros"></table>
+        <button id="irAImprimir">Imprimir Gafetes</button>
     </div>
 </body>
 </html>
